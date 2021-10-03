@@ -4,10 +4,28 @@
 
 #include "Ran2.c"
 
-#define Nlato 3
+#define Nlato 10
 #define h 0.1
-#define beta 0.01
-#define Nmisure 10
+#define beta 0.1
+#define Nmisure 1000000
+
+int magnetiz(int field[Nlato][Nlato]) {
+    int m = 0;
+    for (int i=0; i<Nlato; i++){
+        for (int j=0; j<Nlato; j++){
+            m += field[i][j];
+        }
+    }
+    return m;
+}
+
+void init_freddo(int field[Nlato][Nlato]){
+    for (int i=0; i<Nlato; i++){
+        for (int j=0; j<Nlato; j++){
+            field[i][j] = 1;
+        }
+    }
+}
 
 void init_casuale(int field[Nlato][Nlato], long* seed) {
     for (int i=0; i<Nlato; i++){
@@ -39,11 +57,14 @@ void print_field(int field[Nlato][Nlato]) {
 int main(void) {
     long seed=-3;
     int field[Nlato][Nlato];
-    init_casuale(field, &seed);
+    init_freddo(field);
     print_field(field);
+    printf("%d \n", magnetiz(field));
     for (int i=0; i<Nmisure; i++){
         passo_metropolis(field, &seed);
-        print_field(field);
+        //print_field(field);
     }
+    print_field(field);
+    printf("%d \n", magnetiz(field));
     return 0;
 }
