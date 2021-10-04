@@ -4,11 +4,16 @@
 
 #include "Ran2.c"
 
-#define Nlato 50
-#define h 0.1
-#define beta 0.1
-#define Nmisure 1000000
+#define Nlato 10
+#define h 0
+#define beta 0.3
+#define Nmisure 10
+#define Ndecoer 100
 
+typedef struct MeE {
+    double Ene;
+    int Mag;
+} MeE_t;
 
 //calcola la magnetizzazione: field è la matrice degli spin//
 int magnetiz(int field[Nlato][Nlato]) {
@@ -55,14 +60,30 @@ void passo_metropolis(int field[Nlato][Nlato], long* seed) {
 
 //calcolo l'energia totale
 double energia(int field[Nlato][Nlato]) {
-    int u = 0;
+    int u = 0, m = 0;
     for (int i=0; i<Nlato; i++){
         for (int j=0; j<Nlato; j++){
             u += field[i][j]*forza(field, i, j);
-            //printf("u = %d\n", u);
+            m += field[i][j];
         }
     }
-    return -0.5*u - magnetiz(field)*h;
+    return -0.5*u - m*h;
+}
+
+//calcolo energia e magentizzazione in una volta sola
+MeE_t get_MeE (int field[Nlato][Nlato]) {
+    MeE_t r;
+    r.Mag = 0;
+    int u = 0, m = 0;
+    for (int i=0; i<Nlato; i++){
+        for (int j=0; j<Nlato; j++){
+            m += field[i][j];
+            u += field[i][j]*forza(field, i, j);
+        }
+    }
+    r.Ene = -0.5*u - m*h;
+    r.Mag = m;
+    return r;
 }
 
 //stampa la matrice di spin nella configurazione corrente sullo schermo//
@@ -78,16 +99,23 @@ void print_field(int field[Nlato][Nlato]) {
 }
 
 int main(void) {
-    long seed=-3;
+    FILE *output = fopen("MisureIsing_00.txt", "w");
+    long seed_v = -3, *seed = &seed_v;
     int field[Nlato][Nlato];
-    init_casuale(field, &seed);
+    MeE_t MageEne;
+    init_casuale(field, seed);
     //print_field(field);
     printf("%d \n", magnetiz(field));
     for (int i=0; i<Nmisure; i++){
-        passo_metropolis(field, &seed);
-        //print_field(field);
+        for (int j=0; j<Ndecoer*Nlato*Nlato; j++){
+            passo_metropolis(field, seed);
+        }
+        MageEne = get_MeE(field);
+        fprintf(output, "%d \t %f\n", MageEne.Mag, MageEne.Ene);
+        //fprintf(output, "%d\n", magnetiz(field));
     }
     //print_field(field);
+    fclose(output);
     printf("magnetiz: %d \n", magnetiz(field));
     printf("energia : %f \n", energia(field));
     printf("%d\n", forza(field, 0, 0));
